@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Portofolio BTC</title>
+<meta name="theme-color" content="#e58a0f">
+<meta name="description" content="Catat pembelian Bitcoin dan lihat untung rugi dalam rupiah.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{color-scheme:light dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: satu kolom lebar 1040px. Harga BTC besar di atas, ringkasan, form tambah, lalu tabel pembelian. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef0f4;
+  --line: #dde1e8;
+  --fg: #151a24;
+  --muted: #5d6677;
+  --accent: #e58a0f;
+  --accent-fg: #1a1100;
+  --good: #0f7a4a;
+  --good-bg: #dff3e8;
+  --bad: #b42323;
+  --bad-bg: #fbe3e1;
+  --focus: #2457d6;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f131b;
+    --surface: #171c27;
+    --surface-2: #1f2634;
+    --line: #2b3345;
+    --fg: #e9ecf3;
+    --muted: #97a1b5;
+    --accent: #f5a02e;
+    --accent-fg: #1a1100;
+    --good: #55d394;
+    --good-bg: #123626;
+    --bad: #ff8a80;
+    --bad-bg: #432020;
+    --focus: #7ea3ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f131b;
+  --surface: #171c27;
+  --surface-2: #1f2634;
+  --line: #2b3345;
+  --fg: #e9ecf3;
+  --muted: #97a1b5;
+  --accent: #f5a02e;
+  --accent-fg: #1a1100;
+  --good: #55d394;
+  --good-bg: #123626;
+  --bad: #ff8a80;
+  --bad-bg: #432020;
+  --focus: #7ea3ff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
+h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 17px; font-weight: 600; }
+.sub { color: var(--muted); margin: 4px 0 0; }
+.num { font-variant-numeric: tabular-nums; }
+label, .lbl { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+
+/* Harga BTC */
+.price { display: flex; flex-direction: column; gap: 8px; }
+.price-field {
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 6px;
+}
+.price-field span { font-family: var(--font-display); font-size: 22px; color: var(--muted); font-weight: 500; }
+.price-field input {
+  flex: 1; min-width: 0; border: 0; background: transparent; color: var(--fg);
+  font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 7vw, 44px);
+  letter-spacing: -0.02em; font-variant-numeric: tabular-nums; padding: 0;
+}
+.price-field input:focus-visible { outline: none; }
+.price-field:focus-within { border-bottom-color: var(--focus); }
+.hint { color: var(--muted); font-size: 13px; margin: 0; }
+
+/* Ringkasan */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.stat .v { font-family: var(--font-display); font-weight: 600; font-size: 19px; overflow-wrap: anywhere; }
+.stat .s { font-size: 13px; }
+
+.up { color: var(--good); }
+.down { color: var(--bad); }
+
+/* Form */
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; align-items: end; margin-top: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field input[type="text"], .field input[type="date"] {
+  width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface-2); color: var(--fg); font: inherit; font-variant-numeric: tabular-nums;
+}
+.field input::placeholder { color: var(--muted); opacity: .7; }
+.mode { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; align-self: start; margin-top: 14px; }
+.mode button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; padding: 7px 14px; cursor: pointer; }
+.mode button[aria-pressed="true"] { background: var(--surface-2); color: var(--fg); font-weight: 600; }
+.btn {
+  height: 42px; padding: 0 20px; border: 0; border-radius: 8px; cursor: pointer;
+  background: var(--accent); color: var(--accent-fg); font: inherit; font-weight: 600;
+}
+.btn:hover { filter: brightness(1.06); }
+.btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); height: 34px; padding: 0 12px; font-weight: 500; font-size: 13px; }
+.calc { font-size: 13px; color: var(--muted); margin: 10px 0 0; min-height: 20px; }
+.calc b { color: var(--fg); font-weight: 600; }
+.err { color: var(--bad); font-size: 13px; margin: 8px 0 0; min-height: 18px; }
+
+/* Banner contoh */
+.sample { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface-2); border: 1px dashed var(--line); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--muted); }
+
+/* Tabel */
+.table-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.scroll { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+table { width: 100%; border-collapse: collapse; min-width: 760px; }
+th { text-align: right; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+td { text-align: right; padding: 12px; border-bottom: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+tbody tr:last-child td { border-bottom: 0; }
+td.id { color: var(--muted); }
+.pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-weight: 600; font-size: 13px; }
+.pill.up { background: var(--good-bg); }
+.pill.down { background: var(--bad-bg); }
+.pill.flat { background: var(--surface-2); color: var(--muted); }
+.nominal { display: block; font-size: 12px; margin-top: 3px; }
+.del { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 6px; font: inherit; font-size: 12px; padding: 4px 9px; cursor: pointer; }
+.del:hover { color: var(--bad); border-color: var(--bad); }
+.del.armed { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
+.backup-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.backup-actions .btn.ghost { height: 38px; }
+.backup-msg { font-size: 13px; margin: 12px 0 0; min-height: 18px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.backup-msg:empty { display: none; }
+.sr { position: absolute; left: -9999px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tab { border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font: inherit; font-weight: 500; padding: 10px 16px; margin-bottom: -1px; cursor: pointer; }
+.tab[aria-selected="true"] { color: var(--fg); font-weight: 600; border-bottom-color: var(--accent); }
+.tabpane { display: flex; flex-direction: column; gap: 20px; }
+.mtbl { min-width: 940px; }
+.mtbl th:nth-child(2), .mtbl td:nth-child(2) { text-align: right; }
+.mtbl td.mo { font-weight: 600; }
+.empty { text-align: center; color: var(--muted); padding: 28px 0 12px; }
+
+@media (max-width: 520px) {
+  .panel { padding: 16px; }
+  .scroll { margin: 0 -16px; padding: 0 16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Portofolio BTC</h1>
+    <p class="sub">Catat setiap pembelian, lalu lihat untung rugi berdasarkan harga BTC hari ini.</p>
+    <p class="hint" id="status" aria-live="polite"></p>
+  </header>
+
+  <section class="panel price" aria-labelledby="lbl-price">
+    <label id="lbl-price" for="price">Harga 1 BTC sekarang</label>
+    <div class="price-field">
+      <span>Rp</span>
+      <input id="price" type="text" inputmode="numeric" autocomplete="off" placeholder="0" aria-describedby="price-hint">
+    </div>
+    <p class="hint" id="price-hint">Ubah angka ini kapan saja. Semua nilai dan persentase di bawah ikut dihitung ulang. Angka di tabel ditampilkan dalam RB (ribu), JT (juta), dan M (miliar).</p>
+  </section>
+
+  <section class="summary" id="summary" aria-label="Ringkasan portofolio"></section>
+
+  <div class="tabs" role="tablist" aria-label="Halaman">
+    <button type="button" class="tab" role="tab" id="tab-buy" aria-selected="true" aria-controls="pane-buy">Pembelian</button>
+    <button type="button" class="tab" role="tab" id="tab-month" aria-selected="false" aria-controls="pane-month">Ringkasan bulanan</button>
+  </div>
+
+  <div class="tabpane" id="pane-buy" role="tabpanel" aria-labelledby="tab-buy">
+  <section class="panel" aria-labelledby="h-add">
+    <h2 id="h-add">Tambah pembelian</h2>
+    <div class="mode" role="group" aria-label="Cara mengisi">
+      <button type="button" id="mode-cost" aria-pressed="true">Saya isi modal</button>
+      <button type="button" id="mode-price" aria-pressed="false">Saya isi harga beli</button>
+    </div>
+    <form class="form" id="form" novalidate>
+      <div class="field">
+        <label for="f-date">Tanggal pembelian</label>
+        <input id="f-date" type="date" required>
+      </div>
+      <div class="field">
+        <label for="f-btc">Jumlah BTC</label>
+        <input id="f-btc" type="text" inputmode="decimal" autocomplete="off" placeholder="0,005">
+      </div>
+      <div class="field">
+        <label for="f-val" id="f-val-label">Modal (Rp)</label>
+        <input id="f-val" type="text" inputmode="numeric" autocomplete="off" placeholder="10.000.000">
+      </div>
+      <button class="btn" type="submit">Tambah</button>
+    </form>
+    <p class="calc" id="calc" aria-live="polite"></p>
+    <p class="err" id="err" role="alert"></p>
+  </section>
+
+  <div class="sample" id="sample" hidden>
+    <span>Tabel di bawah berisi data contoh dan harga BTC contoh. Ganti dengan data Anda sendiri.</span>
+    <button class="btn ghost" type="button" id="clear-sample">Hapus data contoh</button>
+  </div>
+
+  <section class="panel" aria-labelledby="h-table">
+    <div class="table-head">
+      <h2 id="h-table">Riwayat pembelian</h2>
+      <span class="hint" id="count"></span>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Tanggal pembelian</th>
+            <th scope="col">Jumlah BTC</th>
+            <th scope="col">Modal</th>
+            <th scope="col">Harga beli</th>
+            <th scope="col">Nilai sekarang</th>
+            <th scope="col">Keuntungan</th>
+            <th scope="col"><span style="position:absolute;left:-9999px">Aksi</span></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="empty" id="empty" hidden>Belum ada pembelian. Isi formulir di atas untuk menambah yang pertama.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-backup">
+    <h2 id="h-backup">Cadangan riwayat</h2>
+    <p class="hint" style="margin-top:6px">Simpan salinan riwayat pembelian sebagai file. Simpan di Google Drive atau kirim ke diri sendiri, lalu pulihkan kapan saja.</p>
+    <div class="backup-actions">
+      <button type="button" class="btn ghost" id="bk-json">Unduh cadangan (JSON)</button>
+      <button type="button" class="btn ghost" id="bk-csv">Unduh tabel (CSV)</button>
+      <button type="button" class="btn ghost" id="bk-restore">Pulihkan dari file</button>
+      <input type="file" id="bk-file" class="sr" accept=".json,application/json" tabindex="-1" aria-label="Pilih file cadangan">
+    </div>
+    <p class="backup-msg" id="bk-msg" aria-live="polite"></p>
+  </section>
+  </div>
+
+  <div class="tabpane" id="pane-month" role="tabpanel" aria-labelledby="tab-month" hidden>
+    <section class="panel" aria-labelledby="h-month">
+      <div class="table-head">
+        <h2 id="h-month">Ringkasan per bulan</h2>
+        <span class="hint" id="m-count"></span>
+      </div>
+      <p class="hint" style="margin:-4px 0 12px">Kolom akumulasi menjumlahkan semua pembelian dari bulan pertama sampai bulan di baris itu. Nilai dan untung/rugi dihitung dengan harga BTC sekarang. Hanya bulan yang ada pembeliannya yang ditampilkan.</p>
+      <div class="scroll">
+        <table class="mtbl">
+          <thead>
+            <tr>
+              <th scope="col">Bulan</th>
+              <th scope="col">Pembelian</th>
+              <th scope="col">BTC dibeli</th>
+              <th scope="col">Modal bulan ini</th>
+              <th scope="col">Akumulasi BTC</th>
+              <th scope="col">Akumulasi modal</th>
+              <th scope="col">Harga beli rata-rata</th>
+              <th scope="col">Nilai akumulasi</th>
+              <th scope="col">Untung/rugi akumulasi</th>
+            </tr>
+          </thead>
+          <tbody id="m-rows"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="m-empty" hidden>Belum ada pembelian untuk diringkas.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "portofolio-btc-v1";
+  var $ = function (id) { return document.getElementById(id); };
+
+  var defaults = {
+    price: 1700000000,
+    nextId: 5,
+    sample: true,
+    rows: [
+      { id: 1, date: "2025-03-10", btc: 0.015, cost: 19500000 },
+      { id: 2, date: "2025-09-22", btc: 0.01, cost: 18000000 },
+      { id: 3, date: "2026-02-14", btc: 0.008, cost: 14400000 },
+      { id: 4, date: "2026-07-05", btc: 0.02, cost: 32000000 }
+    ]
+  };
+
+  var state = load();
+  var mode = "cost";
+  var armedId = null, armTimer = null;
+  var dbDoc = null, saveTimer = null;
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && Array.isArray(s.rows)) return s;
+      }
+    } catch (e) {}
+    return JSON.parse(JSON.stringify(defaults));
+  }
+  function setStatus(t) { $("status").textContent = t; }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    setStatus("Data tersimpan di perangkat ini.");
+  }
+
+  /* Format */
+  var nf0 = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 });
+  var nfBtc = new Intl.NumberFormat("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 8 });
+  var nfPct = new Intl.NumberFormat("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function rpFull(n) { return "Rp " + nf0.format(Math.round(n)); }
+  var nfUnit = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 });
+  function rp(n) {
+    var a = Math.abs(n), s = n < 0 ? "-" : "";
+    if (a >= 1e9) return s + "Rp " + nfUnit.format(a / 1e9) + " M";
+    if (a >= 1e6) return s + "Rp " + nfUnit.format(a / 1e6) + " JT";
+    if (a >= 1e3) return s + "Rp " + nfUnit.format(a / 1e3) + " RB";
+    return s + "Rp " + nf0.format(Math.round(a));
+  }
+  function signed(n, fmt) { return (n > 0 ? "+" : n < 0 ? "−" : "") + fmt(Math.abs(n)); }
+  function fmtDate(s) {
+    var d = new Date(s + "T00:00:00");
+    if (isNaN(d)) return s;
+    return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  }
+  function cls(n) { return n > 0 ? "up" : n < 0 ? "down" : "flat"; }
+  function arrow(n) { return n > 0 ? "▲ " : n < 0 ? "▼ " : ""; }
+
+  /* Parse */
+  function digits(s) { return (s || "").replace(/\D/g, ""); }
+  function parseInt0(s) { var d = digits(s); return d ? Number(d) : 0; }
+  function parseBtc(s) {
+    var t = (s || "").trim().replace(/\s/g, "").replace(",", ".");
+    var n = Number(t);
+    return isFinite(n) ? n : NaN;
+  }
+  function maskInt(el) {
+    var d = digits(el.value);
+    el.value = d ? nf0.format(Number(d)) : "";
+  }
+
+  /* Hitung */
+  function calc(r, price) {
+    var value = r.btc * price;
+    var pnl = value - r.cost;
+    var pct = r.cost > 0 ? (pnl / r.cost) * 100 : 0;
+    return { value: value, pnl: pnl, pct: pct, buy: r.btc > 0 ? r.cost / r.btc : 0 };
+  }
+
+  function render() {
+    var price = state.price || 0;
+    var rows = state.rows.slice().sort(function (a, b) {
+      return a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id;
+    });
+
+    var tb = $("rows");
+    tb.innerHTML = "";
+    var totBtc = 0, totCost = 0, totValue = 0;
+
+    rows.forEach(function (r) {
+      var c = calc(r, price);
+      totBtc += r.btc; totCost += r.cost; totValue += c.value;
+      var k = cls(c.pct);
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td class="id">#' + r.id + "</td>" +
+        "<td>" + fmtDate(r.date) + "</td>" +
+        "<td>" + nfBtc.format(r.btc) + " BTC</td>" +
+        "<td>" + rp(r.cost) + "</td>" +
+        "<td>" + rp(c.buy) + "</td>" +
+        "<td>" + rp(c.value) + "</td>" +
+        '<td><span class="pill ' + k + '">' + arrow(c.pct) + signed(c.pct, nfPct.format) + "%</span>" +
+        '<span class="nominal ' + k + '">' + signed(c.pnl, function (x) { return rp(x); }) + "</span></td>" +
+        '<td><button type="button" class="del' + (armedId === r.id ? " armed" : "") + '" data-id="' + r.id + '">' +
+        (armedId === r.id ? "Yakin?" : "Hapus") + "</button></td>";
+      tb.appendChild(tr);
+    });
+
+    $("empty").hidden = rows.length > 0;
+    $("count").textContent = rows.length ? rows.length + " pembelian, urut tanggal" : "";
+    $("sample").hidden = !state.sample;
+
+    var totPnl = totValue - totCost;
+    var totPct = totCost > 0 ? (totPnl / totCost) * 100 : 0;
+    var avg = totBtc > 0 ? totCost / totBtc : 0;
+    var k2 = cls(totPnl);
+    $("summary").innerHTML =
+      stat("Total BTC", nfBtc.format(totBtc) + " BTC", "") +
+      stat("Total modal", rp(totCost), "") +
+      stat("Nilai sekarang", rp(totValue), "") +
+      stat("Untung / rugi", signed(totPnl, function (x) { return rp(x); }),
+        '<span class="' + k2 + '">' + arrow(totPnl) + signed(totPct, nfPct.format) + "%</span>", k2) +
+      stat("Harga beli rata-rata", rp(avg), "per 1 BTC");
+    renderMonthly();
+  }
+  function stat(label, value, sub, k) {
+    return '<div class="stat"><span class="lbl">' + label + '</span><span class="v num ' + (k || "") + '">' + value +
+      '</span><span class="s num" style="color:var(--muted)">' + sub + "</span></div>";
+  }
+
+  /* Harga sekarang */
+  var priceEl = $("price");
+  priceEl.value = state.price ? nf0.format(state.price) : "";
+  priceEl.addEventListener("input", function () {
+    maskInt(priceEl);
+    state.price = parseInt0(priceEl.value);
+    save(); render();
+  });
+
+  /* Form */
+  var fBtc = $("f-btc"), fVal = $("f-val"), fDate = $("f-date");
+  function today() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+  fDate.value = today();
+  fDate.max = today();
+
+  function setMode(m) {
+    mode = m;
+    $("mode-cost").setAttribute("aria-pressed", m === "cost");
+    $("mode-price").setAttribute("aria-pressed", m === "price");
+    $("f-val-label").textContent = m === "cost" ? "Modal (Rp)" : "Harga beli per BTC (Rp)";
+    fVal.value = "";
+    updateCalc();
+  }
+  $("mode-cost").addEventListener("click", function () { setMode("cost"); });
+  $("mode-price").addEventListener("click", function () { setMode("price"); });
+
+  function current() {
+    var btc = parseBtc(fBtc.value);
+    var v = parseInt0(fVal.value);
+    if (!(btc > 0) || !(v > 0)) return null;
+    var cost = mode === "cost" ? v : Math.round(btc * v);
+    var buy = mode === "cost" ? cost / btc : v;
+    return { btc: btc, cost: cost, buy: buy };
+  }
+  function updateCalc() {
+    var c = current();
+    if (!c) { $("calc").textContent = ""; return; }
+    $("calc").innerHTML = mode === "cost"
+      ? "Harga beli otomatis: <b>" + rp(c.buy) + "</b> per BTC (" + rpFull(c.buy) + ")"
+      : "Modal otomatis: <b>" + rp(c.cost) + "</b> (" + rpFull(c.cost) + ")";
+  }
+  fVal.addEventListener("input", function () { maskInt(fVal); updateCalc(); $("err").textContent = ""; });
+  fBtc.addEventListener("input", function () {
+    fBtc.value = fBtc.value.replace(/[^0-9.,]/g, "");
+    updateCalc(); $("err").textContent = "";
+  });
+
+  $("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var err = $("err");
+    if (!fDate.value) { err.textContent = "Pilih tanggal pembelian."; return; }
+    var btc = parseBtc(fBtc.value);
+    if (!(btc > 0)) { err.textContent = "Isi jumlah BTC dengan angka lebih dari 0, contoh 0,005."; return; }
+    var c = current();
+    if (!c) { err.textContent = mode === "cost" ? "Isi modal yang Anda keluarkan." : "Isi harga beli per BTC."; return; }
+
+    if (state.sample) { state.rows = []; state.sample = false; state.nextId = 1; }
+    var maxId = 0;
+    state.rows.forEach(function (r) { if (r.id > maxId) maxId = r.id; });
+    state.nextId = maxId + 2;
+    state.rows.push({ id: maxId + 1, date: fDate.value, btc: c.btc, cost: c.cost });
+    save();
+    fBtc.value = ""; fVal.value = ""; err.textContent = "";
+    $("calc").textContent = "Pembelian ditambahkan.";
+    render();
+    fBtc.focus();
+  });
+
+  /* Hapus */
+  $("rows").addEventListener("click", function (e) {
+    var b = e.target.closest(".del");
+    if (!b) return;
+    var id = Number(b.getAttribute("data-id"));
+    if (armedId === id) {
+      state.rows = state.rows.filter(function (r) { return r.id !== id; })
+        .sort(function (a, b) { return a.id - b.id; });
+      state.rows.forEach(function (r, i) { r.id = i + 1; });
+      state.nextId = state.rows.length + 1;
+      armedId = null; clearTimeout(armTimer);
+      save();
+    } else {
+      armedId = id;
+      clearTimeout(armTimer);
+      armTimer = setTimeout(function () { armedId = null; render(); }, 3000);
+    }
+    render();
+  });
+
+  $("clear-sample").addEventListener("click", function () {
+    state.rows = []; state.sample = false; state.nextId = 1;
+    save(); render();
+  });
+
+  /* Ringkasan bulanan */
+  function renderMonthly() {
+    var price = state.price || 0, groups = {};
+    state.rows.forEach(function (r) {
+      var k = String(r.date).slice(0, 7);
+      if (!groups[k]) groups[k] = { n: 0, btc: 0, cost: 0 };
+      groups[k].n++; groups[k].btc += r.btc; groups[k].cost += r.cost;
+    });
+    var keys = Object.keys(groups).sort();
+    var cumBtc = 0, cumCost = 0, html = "";
+    keys.forEach(function (k) {
+      var g = groups[k];
+      cumBtc += g.btc; cumCost += g.cost;
+      var val = cumBtc * price, pnl = val - cumCost, pct = cumCost > 0 ? pnl / cumCost * 100 : 0, kc = cls(pnl);
+      var p = k.split("-");
+      var label = new Date(+p[0], +p[1] - 1, 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+      html += "<tr>" +
+        '<td class="mo">' + label + "</td>" +
+        "<td>" + g.n + "x</td>" +
+        "<td>" + nfBtc.format(g.btc) + " BTC</td>" +
+        "<td>" + rp(g.cost) + "</td>" +
+        "<td>" + nfBtc.format(cumBtc) + " BTC</td>" +
+        "<td>" + rp(cumCost) + "</td>" +
+        "<td>" + rp(cumBtc > 0 ? cumCost / cumBtc : 0) + "</td>" +
+        "<td>" + rp(val) + "</td>" +
+        '<td><span class="pill ' + kc + '">' + arrow(pnl) + signed(pct, nfPct.format) + "%</span>" +
+        '<span class="nominal ' + kc + '">' + signed(pnl, function (x) { return rp(x); }) + "</span></td>" +
+        "</tr>";
+    });
+    $("m-rows").innerHTML = html;
+    $("m-empty").hidden = keys.length > 0;
+    $("m-count").textContent = keys.length ? keys.length + " bulan" : "";
+  }
+  function showTab(name) {
+    ["buy", "month"].forEach(function (t) {
+      $("pane-" + t).hidden = t !== name;
+      $("tab-" + t).setAttribute("aria-selected", t === name ? "true" : "false");
+    });
+  }
+  $("tab-buy").addEventListener("click", function () { showTab("buy"); });
+  $("tab-month").addEventListener("click", function () { showTab("month"); });
+
+  /* Cadangan file */
+  var pendingRestore = null;
+  function bkMsg(t) { var m = $("bk-msg"); m.textContent = t; pendingRestore = null; }
+  function stamp() { return today(); }
+  async function saveFile(filename, text) {
+    try {
+      var type = /\.csv$/.test(filename) ? "text/csv;charset=utf-8" : "application/json";
+      var blob = new Blob([text], { type: type });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      bkMsg("File " + filename + " diunduh. Cek folder Unduhan di perangkat Anda.");
+    } catch (e) {
+      try {
+        await navigator.clipboard.writeText(text);
+        bkMsg("Unduhan gagal, jadi isinya disalin ke papan klip. Tempel ke catatan Anda.");
+      } catch (e2) {
+        bkMsg("Unduhan dan salin tidak tersedia. Coba buka aplikasi di Chrome.");
+      }
+    }
+  }
+  $("bk-json").addEventListener("click", function () {
+    if (state.sample || !state.rows.length) { bkMsg("Belum ada pembelian Anda untuk dicadangkan."); return; }
+    saveFile("portofolio-btc-" + stamp() + ".json", JSON.stringify({ app: "portofolio-btc", version: 1, price: state.price, nextId: state.nextId, rows: state.rows }, null, 2));
+  });
+  $("bk-csv").addEventListener("click", function () {
+    if (state.sample || !state.rows.length) { bkMsg("Belum ada pembelian Anda untuk diunduh."); return; }
+    var price = state.price || 0;
+    var lines = ["Tanggal,Jumlah BTC,Modal (Rp),Harga beli (Rp),Nilai sekarang (Rp),Untung/rugi (%),Untung/rugi (Rp)"];
+    state.rows.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id; }).forEach(function (r) {
+      var c = calc(r, price);
+      lines.push([r.date, r.btc, r.cost, Math.round(c.buy), Math.round(c.value), c.pct.toFixed(2), Math.round(c.pnl)].join(","));
+    });
+    saveFile("riwayat-btc-" + stamp() + ".csv", lines.join("\n"));
+  });
+  $("bk-restore").addEventListener("click", function () { $("bk-file").click(); });
+  $("bk-file").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onerror = function () { bkMsg("File tidak bisa dibaca."); };
+    rd.onload = function () {
+      try {
+        var o = JSON.parse(String(rd.result));
+        if (!o || !Array.isArray(o.rows)) throw new Error("format");
+        var rows = o.rows.filter(function (r) {
+          return r && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && r.btc > 0 && r.cost > 0;
+        }).map(function (r) { return { id: Number(r.id) || 0, date: r.date, btc: Number(r.btc), cost: Number(r.cost) }; });
+        if (!rows.length) throw new Error("kosong");
+        var m = $("bk-msg");
+        m.textContent = "File berisi " + rows.length + " pembelian. Ganti riwayat saat ini dengan isi file?";
+        var yes = document.createElement("button");
+        yes.type = "button"; yes.className = "btn ghost"; yes.textContent = "Ya, ganti";
+        yes.addEventListener("click", function () {
+          var maxId = 0;
+          rows.forEach(function (r, i) { if (!r.id) r.id = i + 1; if (r.id > maxId) maxId = r.id; });
+          state = { price: Number(o.price) || state.price || 0, nextId: Math.max(Number(o.nextId) || 0, maxId + 1), sample: false, rows: rows };
+          priceEl.value = state.price ? nf0.format(state.price) : "";
+          save(); render();
+          bkMsg("Riwayat dipulihkan: " + rows.length + " pembelian.");
+        });
+        var no = document.createElement("button");
+        no.type = "button"; no.className = "btn ghost"; no.textContent = "Batal";
+        no.addEventListener("click", function () { bkMsg(""); });
+        m.appendChild(yes); m.appendChild(no);
+      } catch (err) {
+        bkMsg("File ini bukan cadangan Portofolio BTC yang valid.");
+      }
+    };
+    rd.readAsText(f);
+  });
+
+  render();
+  setStatus("Data tersimpan di perangkat ini.");
+  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
+})();
+</script>
+
+</body>
+</html>
