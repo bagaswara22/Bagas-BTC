@@ -1,2 +1,0 @@
-# Bagas-BTC
-Portofolio BTC 
